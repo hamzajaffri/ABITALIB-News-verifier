@@ -1,0 +1,5 @@
+{
+  "name": "Abitalib News Verifier",
+  "description": "An enterprise-level news verifier using advanced AI to analyze text and URLs in real-time. It provides authenticity scores, detailed summaries, and maintains a conversational history for comprehensive fact-checking.",
+  "requestFramePermissions": []
+}
