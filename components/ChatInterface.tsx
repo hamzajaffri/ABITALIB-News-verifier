@@ -27,6 +27,26 @@ const CheckIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
 );
 
+const groupSourcesByDomain = (sources: GroundingChunk[]): { [domain: string]: GroundingChunk[] } => {
+    if (!sources) return {};
+    const grouped: { [domain: string]: GroundingChunk[] } = {};
+    sources.forEach(source => {
+        if (source.web?.uri) {
+            try {
+                const url = new URL(source.web.uri);
+                const domain = url.hostname.replace(/^www\./, '');
+                if (!grouped[domain]) {
+                    grouped[domain] = [];
+                }
+                grouped[domain].push(source);
+            } catch (error) {
+                console.error("Invalid URL in sources:", source.web.uri, error);
+            }
+        }
+    });
+    return grouped;
+};
+
 
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -168,19 +188,29 @@ export const ChatInterface: React.FC = () => {
                             ))}
                         </ul>
                     </div>
-                  {msg.verificationResult.sources && msg.verificationResult.sources.length > 0 && (
-                     <div>
-                        <h4 className="font-orbitron text-md text-cyan-400 mt-4 mb-2">Sources</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
-                            {msg.verificationResult.sources.map((source, i) => (
-                                <a key={i} href={source.web?.uri} target="_blank" rel="noopener noreferrer" className="block p-2 bg-gray-900/50 rounded hover:bg-gray-800/70 transition-colors truncate">
-                                    <p className="font-semibold text-cyan-400 truncate">{source.web?.title}</p>
-                                    <p className="text-gray-500 text-xs truncate">{source.web?.uri}</p>
-                                </a>
-                            ))}
+                    {msg.verificationResult.sources && msg.verificationResult.sources.length > 0 && (
+                        <div>
+                            <h4 className="font-orbitron text-md text-cyan-400 mt-4 mb-2">Sources</h4>
+                            <div className="space-y-3">
+                                {Object.entries(groupSourcesByDomain(msg.verificationResult.sources)).map(([domain, domainSources]) => (
+                                    <div key={domain} className="bg-gray-900/50 p-3 rounded-lg border border-gray-700/50">
+                                        <h5 className="font-semibold text-gray-300 text-sm mb-2 flex items-center gap-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path><path d="M2 12h20"></path></svg>
+                                            <span className="truncate">{domain}</span>
+                                        </h5>
+                                        <div className="space-y-2 text-sm pl-3 border-l-2 border-gray-700">
+                                            {domainSources.map((source, i) => (
+                                                <a key={i} href={source.web?.uri} target="_blank" rel="noopener noreferrer" className="block p-2 rounded hover:bg-gray-800/70 transition-colors group">
+                                                    <p className="font-semibold text-cyan-400 truncate group-hover:text-cyan-300 transition-colors">{source.web?.title || 'Untitled Page'}</p>
+                                                    <p className="text-gray-500 text-xs truncate">{source.web?.uri}</p>
+                                                </a>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    </div>
-                  )}
+                    )}
                 </div>
               ) : (
                 <p className="text-gray-300 whitespace-pre-wrap">{msg.text}</p>
